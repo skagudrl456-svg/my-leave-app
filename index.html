@@ -3,9 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>연차 관리 App Preview</title>
+    <title>연차 관리</title>
+    <link rel="apple-touch-icon" href="apple-touch-icon.png">
     <style>
-        /* 라이트 모드 (기본) 색상 변수 */
         :root {
             --bg-color: #f2f2f7;
             --card-bg: #ffffff;
@@ -25,12 +25,10 @@
             --tab-bg: #e3e3e8;
             --tab-active-bg: #ffffff;
             
-            /* Safe Area (iPhone Notch & Dynamic Island 대응) */
             --safe-top: env(safe-area-inset-top, 47px);
             --safe-bottom: env(safe-area-inset-bottom, 34px);
         }
 
-        /* 다크 모드 자동 감지 및 적용 */
         @media (prefers-color-scheme: dark) {
             :root {
                 --bg-color: #000000;
@@ -70,7 +68,6 @@
             min-height: 100dvh;
         }
 
-        /* 반응형 아이폰 프레임 (13 Mini ~ 16 Pro 대응) */
         .iphone-frame {
             width: 100%;
             max-width: 430px;
@@ -87,7 +84,6 @@
             color: var(--text-main);
         }
 
-        /* 모바일 실제 기기 직접 접속 시 외곽 프레임 비활성화 */
         @media screen and (max-width: 500px) {
             body {
                 background-color: var(--bg-color);
@@ -102,7 +98,6 @@
             }
         }
 
-        /* 다이내믹 아일랜드 / 노치 가상 영역 (웹 프리뷰 전용) */
         .island {
             width: clamp(100px, 30vw, 125px);
             height: 30px;
@@ -115,7 +110,6 @@
             z-index: 100;
         }
 
-        /* 토스트 알림 메시지 */
         .toast {
             display: none;
             position: absolute;
@@ -133,7 +127,6 @@
             white-space: nowrap;
         }
 
-        /* 헤더 영역 (Safe Area 자동 반영) */
         .header {
             padding-top: max(var(--safe-top), 45px);
             padding-left: clamp(16px, 4vw, 20px);
@@ -219,7 +212,6 @@
             display: none;
         }
 
-        /* 연차 현황 요약 카드 */
         .summary-card {
             background: var(--card-bg);
             border-radius: 20px;
@@ -278,7 +270,6 @@
             font-weight: 800;
         }
 
-        /* 섹션 타이틀 및 아이콘 뷰 전환 버튼 */
         .section-header-top {
             display: flex;
             justify-content: space-between;
@@ -348,7 +339,6 @@
             box-shadow: 0 2px 6px rgba(0,0,0,0.12);
         }
 
-        /* 리스트 뷰 카드 스타일 */
         .record-card-wrapper {
             position: relative;
             margin-bottom: 10px;
@@ -437,7 +427,6 @@
             color: var(--text-main);
         }
 
-        /* CALENDAR VIEW STYLE */
         .calendar-container {
             background-color: var(--card-bg);
             border-radius: 18px;
@@ -581,7 +570,6 @@
         .dot-personal { background-color: var(--accent-green); }
         .dot-reward { background-color: var(--accent-purple); }
 
-        /* 모달 팝업 레이아웃 */
         .modal {
             display: none;
             position: absolute;
@@ -672,7 +660,6 @@
             margin-left: 6px;
         }
 
-        /* 하단 보조 버튼 영역 */
         .modal-secondary-btn {
             background-color: var(--card-bg);
             color: var(--primary);
@@ -718,7 +705,6 @@
     <div class="island"></div>
     <div class="toast" id="toastMsg">📅 iOS 기본 캘린더와 연동되었습니다.</div>
     
-    <!-- 헤더 영역 -->
     <div class="header">
         <div class="year-select-container">
             <select class="year-select-dropdown" id="yearDropdown" onchange="changeYear(this.value)">
@@ -730,9 +716,7 @@
         <button class="add-btn" onclick="openAddModal()">+</button>
     </div>
 
-    <!-- 메인 컨텐츠 영역 -->
     <div class="content">
-        <!-- 연차 현황 요약 카드 -->
         <div class="summary-card">
             <div class="summary-title" id="summaryHeader">2026년 연차 현황</div>
             <div class="metrics-grid">
@@ -757,7 +741,6 @@
             </div>
         </div>
 
-        <!-- 휴가 기록 헤더 & 아이콘 뷰 전환 버튼 -->
         <div class="section-header-top">
             <div class="section-title">휴가 기록</div>
             <div class="view-mode-toggle">
@@ -770,7 +753,6 @@
             </div>
         </div>
 
-        <!-- 카테고리 탭 -->
         <div class="tab-bar" id="categoryTabBar">
             <button class="tab-btn active" onclick="selectTab('all')">전체</button>
             <button class="tab-btn" onclick="selectTab('공동연차')">공동연차</button>
@@ -778,11 +760,9 @@
             <button class="tab-btn" onclick="selectTab('포상휴가')">포상휴가</button>
         </div>
 
-        <!-- 컨텐츠 출력 영역 -->
         <div id="recordsContainer"></div>
     </div>
 
-    <!-- 연차 등록/수정 모달 -->
     <div class="modal" id="addModal">
         <div class="modal-header">
             <button class="modal-btn" onclick="closeModal('addModal')">취소</button>
@@ -827,7 +807,6 @@
         <button class="modal-delete-btn" id="modalDeleteBtn" style="display: none;" onclick="deleteRecordFromModal()">삭제</button>
     </div>
 
-    <!-- TOTAL 발생연차 수정 모달 -->
     <div class="modal" id="totalEditModal" style="top: 250px;">
         <div class="modal-header">
             <button class="modal-btn" onclick="closeModal('totalEditModal')">취소</button>
@@ -850,7 +829,8 @@
     let currentViewMode = 'list';
     let editingRecordId = null; 
     
-    let leaveData = {
+    // 기본 샘플 데이터 (저장소 데이터가 없을 때 사용)
+    const defaultData = {
         2026: {
             baseTotal: 20.0,
             records: [
@@ -865,6 +845,26 @@
         2027: { baseTotal: 15.0, records: [] },
         2028: { baseTotal: 18.0, records: [] }
     };
+
+    let leaveData = loadDataFromStorage();
+
+    // localStorage에서 저장 데이터 불러오기
+    function loadDataFromStorage() {
+        const saved = localStorage.getItem('leave_app_data');
+        if (saved) {
+            try {
+                return JSON.parse(saved);
+            } catch (e) {
+                return defaultData;
+            }
+        }
+        return defaultData;
+    }
+
+    // localStorage에 데이터 영구 보관하기
+    function saveDataToStorage() {
+        localStorage.setItem('leave_app_data', JSON.stringify(leaveData));
+    }
 
     function changeYear(year) {
         currentYear = parseInt(year);
@@ -1149,6 +1149,7 @@
         const newVal = parseInt(document.getElementById('inputBaseTotal').value, 10);
         if (!isNaN(newVal) && newVal >= 0) {
             leaveData[currentYear].baseTotal = newVal;
+            saveDataToStorage(); // 스토리지에 데이터 저장
             render();
             closeModal('totalEditModal');
         } else {
@@ -1159,6 +1160,7 @@
     function deleteRecord(id) {
         if (confirm("해당 휴가 기록을 삭제하시겠습니까?")) {
             leaveData[currentYear].records = leaveData[currentYear].records.filter(r => r.id !== id);
+            saveDataToStorage(); // 스토리지에 데이터 저장
             render();
         }
     }
@@ -1234,6 +1236,7 @@
             }
         }
 
+        saveDataToStorage(); // 스토리지에 데이터 저장
         render();
 
         if (keepOpen) {
