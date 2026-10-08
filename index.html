@@ -848,7 +848,18 @@
         const saved = localStorage.getItem('leave_app_data');
         if (saved) {
             try {
-                return JSON.parse(saved);
+                const parsed = JSON.parse(saved);
+                // 기존 데이터에 days 필드로 기록되었던 항목 보정
+                Object.keys(parsed).forEach(yr => {
+                    if (parsed[yr].records) {
+                        parsed[yr].records.forEach(r => {
+                            if (r.deduct === undefined && r.days !== undefined) {
+                                r.deduct = r.days;
+                            }
+                        });
+                    }
+                });
+                return parsed;
             } catch (e) {
                 return defaultData;
             }
@@ -860,7 +871,6 @@
         localStorage.setItem('leave_app_data', JSON.stringify(leaveData));
     }
 
-    // 드롭다운 연도 자동 구성 함수 (2026년부터 현재 연도+3년까지 생성)
     function renderYearDropdown() {
         const yearDropdown = document.getElementById('yearDropdown');
         yearDropdown.innerHTML = '';
@@ -913,11 +923,11 @@
         document.getElementById('summaryHeader').innerText = `${currentYear}년 연차 현황`;
         document.getElementById('totalDays').innerText = computedTotal.toFixed(2);
 
-        const plan = yearData.records.reduce((acc, r) => acc + r.deduct, 0);
+        const plan = yearData.records.reduce((acc, r) => acc + (r.deduct || 1.0), 0);
         const todayStr = new Date().toISOString().split('T')[0];
         const used = yearData.records
             .filter(r => r.date <= todayStr)
-            .reduce((acc, r) => acc + r.deduct, 0);
+            .reduce((acc, r) => acc + (r.deduct || 1.0), 0);
 
         document.getElementById('planDays').innerText = plan.toFixed(2);
         document.getElementById('currRemaining').innerText = (computedTotal - used).toFixed(2);
@@ -959,6 +969,7 @@
             if (r.type === "포상휴가") tagClass = "tag-reward";
 
             const isUpcoming = r.date > todayStr;
+            const deductVal = r.deduct !== undefined ? r.deduct : 1.0;
 
             const wrapper = document.createElement('div');
             wrapper.className = 'record-card-wrapper';
@@ -974,7 +985,7 @@
                         </div>
                         ${r.note ? `<div class="record-note">${r.note}</div>` : ''}
                     </div>
-                    <div class="record-days">${r.deduct.toFixed(2)}일</div>
+                    <div class="record-days">${deductVal.toFixed(2)}일</div>
                 </div>
             `;
 
@@ -1059,9 +1070,10 @@
             const record = filteredRecords.find(r => r.date === dateStr);
 
             if (record) {
+                const deductVal = record.deduct !== undefined ? record.deduct : 1.0;
                 let fillClass = "fill-1-0";
-                if (record.deduct === 0.5) fillClass = "fill-0-5";
-                if (record.deduct === 0.25) fillClass = "fill-0-25";
+                if (deductVal === 0.5) fillClass = "fill-0-5";
+                if (deductVal === 0.25) fillClass = "fill-0-25";
 
                 let bgClass = "bg-personal";
                 if (record.type === "공동연차") bgClass = "bg-joint";
@@ -1070,7 +1082,7 @@
                 cell.innerHTML = `
                     <div class="cal-fill ${fillClass} ${bgClass}"></div>
                     <span class="cal-day-num">${day}</span>
-                    <span class="cal-deduct-text">${record.deduct}일</span>
+                    <span class="cal-deduct-text">${deductVal}일</span>
                 `;
                 cell.onclick = () => openEditModal(record.id);
             } else {
@@ -1135,7 +1147,10 @@
         document.getElementById('inputStartDate').value = record.date;
         document.getElementById('endDateRow').style.display = 'none';
         document.getElementById('inputType').value = record.type;
-        document.getElementById('inputDeduct').value = record.deduct.toString();
+
+        // 차감 수량 값이 없는 경우 1.0으로 기본 보정
+        const deductVal = record.deduct !== undefined ? record.deduct : 1.0;
+        document.getElementById('inputDeduct').value = deductVal.toString();
         document.getElementById('inputNote').value = record.note || '';
 
         handleTypeChange();
@@ -1217,7 +1232,6 @@
 
         if (!startStr) return alert("날짜를 입력해 주세요.");
 
-        // 선택한 날짜에서 연도 추출 (내년 날짜 선택 시 해당 연도로 자동 할당)
         const targetYear = parseInt(startStr.split('-')[0], 10);
 
         if (!leaveData[targetYear]) {
@@ -1259,7 +1273,6 @@
             }
         }
 
-        // 선택한 휴가의 연도로 앱 보기 자동 전환
         currentYear = targetYear;
 
         saveDataToStorage();
