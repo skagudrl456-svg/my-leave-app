@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>연차 관리 v2</title>
+    <title>연차 관리</title>
     <link rel="apple-touch-icon" href="apple-touch-icon.png">
     <style>
         :root {
@@ -787,7 +787,7 @@
             <div class="form-row" id="deductRow">
                 <span class="form-label">차감 수량 (일)</span>
                 <select id="inputDeduct">
-                    <option value="1.0">1.0일 (전일)</option>
+                    <option value="1">1.0일 (전일)</option>
                     <option value="0.5">0.5일 (반차)</option>
                     <option value="0.25">0.25일 (반반차)</option>
                 </select>
@@ -849,13 +849,14 @@
         if (saved) {
             try {
                 const parsed = JSON.parse(saved);
-                // 기존 데이터에 days 필드로 기록되었던 항목 보정
                 Object.keys(parsed).forEach(yr => {
                     if (parsed[yr].records) {
                         parsed[yr].records.forEach(r => {
-                            if (r.deduct === undefined && r.days !== undefined) {
-                                r.deduct = r.days;
+                            let val = r.deduct !== undefined ? r.deduct : r.days;
+                            if (val === undefined || val === null || isNaN(parseFloat(val))) {
+                                val = 1.0;
                             }
+                            r.deduct = parseFloat(val);
                         });
                     }
                 });
@@ -923,11 +924,11 @@
         document.getElementById('summaryHeader').innerText = `${currentYear}년 연차 현황`;
         document.getElementById('totalDays').innerText = computedTotal.toFixed(2);
 
-        const plan = yearData.records.reduce((acc, r) => acc + (r.deduct || 1.0), 0);
+        const plan = yearData.records.reduce((acc, r) => acc + (parseFloat(r.deduct) || 1.0), 0);
         const todayStr = new Date().toISOString().split('T')[0];
         const used = yearData.records
             .filter(r => r.date <= todayStr)
-            .reduce((acc, r) => acc + (r.deduct || 1.0), 0);
+            .reduce((acc, r) => acc + (parseFloat(r.deduct) || 1.0), 0);
 
         document.getElementById('planDays').innerText = plan.toFixed(2);
         document.getElementById('currRemaining').innerText = (computedTotal - used).toFixed(2);
@@ -969,7 +970,7 @@
             if (r.type === "포상휴가") tagClass = "tag-reward";
 
             const isUpcoming = r.date > todayStr;
-            const deductVal = r.deduct !== undefined ? r.deduct : 1.0;
+            const deductVal = parseFloat(r.deduct) || 1.0;
 
             const wrapper = document.createElement('div');
             wrapper.className = 'record-card-wrapper';
@@ -1070,7 +1071,7 @@
             const record = filteredRecords.find(r => r.date === dateStr);
 
             if (record) {
-                const deductVal = record.deduct !== undefined ? record.deduct : 1.0;
+                const deductVal = parseFloat(record.deduct) || 1.0;
                 let fillClass = "fill-1-0";
                 if (deductVal === 0.5) fillClass = "fill-0-5";
                 if (deductVal === 0.25) fillClass = "fill-0-25";
@@ -1130,6 +1131,7 @@
         document.getElementById('inputEndDate').value = todayStr;
         document.getElementById('endDateRow').style.display = 'flex';
         document.getElementById('inputType').value = '개인연차';
+        document.getElementById('inputDeduct').value = '1';
         document.getElementById('inputNote').value = ''; 
         handleTypeChange();
         document.getElementById('addModal').style.display = 'flex';
@@ -1148,9 +1150,13 @@
         document.getElementById('endDateRow').style.display = 'none';
         document.getElementById('inputType').value = record.type;
 
-        // 차감 수량 값이 없는 경우 1.0으로 기본 보정
-        const deductVal = record.deduct !== undefined ? record.deduct : 1.0;
-        document.getElementById('inputDeduct').value = deductVal.toString();
+        // 수치형으로 파싱하여 option value와 완벽 매칭
+        const numVal = parseFloat(record.deduct);
+        let matchStr = "1";
+        if (numVal === 0.5) matchStr = "0.5";
+        else if (numVal === 0.25) matchStr = "0.25";
+
+        document.getElementById('inputDeduct').value = matchStr;
         document.getElementById('inputNote').value = record.note || '';
 
         handleTypeChange();
@@ -1216,7 +1222,7 @@
         
         if (type === "공동연차" || type === "포상휴가") {
             deductRow.style.display = "none";
-            document.getElementById('inputDeduct').value = "1.0";
+            document.getElementById('inputDeduct').value = "1";
         } else {
             deductRow.style.display = "flex";
         }
