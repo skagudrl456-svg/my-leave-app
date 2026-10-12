@@ -6,7 +6,7 @@
     <title>연차 관리</title>
     <link rel="apple-touch-icon" href="apple-touch-icon.png">
     
-    <!-- Firebase SDK (v9 호환 모듈) -->
+    <!-- Firebase SDK -->
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
 
@@ -253,7 +253,11 @@
             padding: 14px;
             border: 1px solid var(--border-color);
             box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+            cursor: pointer;
+            transition: transform 0.2s ease;
         }
+
+        .dash-card:active { transform: scale(0.97); }
 
         .dash-user-title {
             font-size: 13px;
@@ -282,10 +286,7 @@
             color: var(--text-sub);
         }
 
-        .dash-val {
-            font-weight: 700;
-            color: var(--text-main);
-        }
+        .dash-val { font-weight: 700; color: var(--text-main); }
 
         .joint-vacation-card {
             background: var(--card-bg);
@@ -305,11 +306,7 @@
             gap: 4px;
         }
 
-        .joint-list {
-            display: flex;
-            flex-wrap: wrap;
-            gap: 6px;
-        }
+        .joint-list { display: flex; flex-wrap: wrap; gap: 6px; }
 
         .joint-tag {
             font-size: 11px;
@@ -555,22 +552,42 @@
         .cal-cell.empty { background: none; cursor: default; }
         .cal-cell.today { border-color: var(--primary); }
 
-        .cal-fill-container {
+        /* 원본 색상 채우기 레이어 */
+        .cal-fill {
             position: absolute;
             bottom: 0;
             left: 0;
             right: 0;
-            top: 0;
-            display: flex;
             z-index: 1;
+            transition: height 0.3s ease;
         }
 
-        .cal-fill-split { flex: 1; height: 100%; transition: height 0.3s ease; }
+        .fill-1-0 { height: 100%; }
+        .fill-0-5 { height: 50%; }
+        .fill-0-25 { height: 25%; }
 
         .bg-joint { background-color: rgba(var(--primary-rgb), 0.35); }
         .bg-personal { background-color: rgba(var(--accent-green-rgb), 0.35); }
         .bg-reward { background-color: rgba(var(--accent-purple-rgb), 0.35); }
-        .bg-wife { background-color: rgba(var(--accent-pink-rgb), 0.35); }
+
+        /* 남편/아내 사용자 점 뱃지 (상단 오버레이) */
+        .user-dots-container {
+            position: absolute;
+            top: 4px;
+            left: 4px;
+            display: flex;
+            gap: 2px;
+            z-index: 3;
+        }
+
+        .user-dot {
+            width: 6px;
+            height: 6px;
+            border-radius: 50%;
+        }
+
+        .user-dot-husband { background-color: var(--primary); }
+        .user-dot-wife { background-color: var(--accent-pink); }
 
         .cal-day-num { position: relative; z-index: 2; }
         .cal-deduct-text { position: relative; z-index: 2; font-size: 8px; font-weight: 700; margin-top: 1px; opacity: 0.85; }
@@ -588,6 +605,9 @@
 
         .legend-item { display: flex; align-items: center; gap: 6px; }
         .legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+        .dot-joint { background-color: var(--primary); }
+        .dot-personal { background-color: var(--accent-green); }
+        .dot-reward { background-color: var(--accent-purple); }
         .dot-husband { background-color: var(--primary); }
         .dot-wife { background-color: var(--accent-pink); }
 
@@ -707,7 +727,8 @@
     <div class="content">
         <div id="dashboardSection" style="display: block;">
             <div class="dashboard-grid">
-                <div class="dash-card">
+                <!-- 남편 요약 카드 (터치 시 남편 탭 이동) -->
+                <div class="dash-card" onclick="selectProfile('남편')">
                     <div class="dash-user-title">
                         남편 <span class="dash-user-badge badge-husband">Husband</span>
                     </div>
@@ -716,7 +737,8 @@
                     <div class="dash-row" style="margin-top: 6px;">잔여 연차 <span class="dash-val" style="color: var(--primary);" id="hRemaining">20.0일</span></div>
                 </div>
 
-                <div class="dash-card">
+                <!-- 아내 요약 카드 (터치 시 아내 탭 이동) -->
+                <div class="dash-card" onclick="selectProfile('아내')">
                     <div class="dash-user-title">
                         아내 <span class="dash-user-badge badge-wife">Wife</span>
                     </div>
@@ -790,7 +812,7 @@
         <div class="form-group">
             <div class="form-row">
                 <span class="form-label">대상 프로필</span>
-                <select id="inputUser">
+                <select id="inputUser" onchange="onUserSelectChange(this.value)">
                     <option value="남편">남편</option>
                     <option value="아내">아내</option>
                 </select>
@@ -870,13 +892,16 @@
         console.warn("Firebase 연동 준비 상태입니다.");
     }
 
-    /* --- 2. 상태 변수 및 마이그레이션 --- */
+    /* --- 2. 상태 변수 및 기기별 디폴트 설정 --- */
     let currentYear = new Date().getFullYear();
     let currentMonth = new Date().getMonth();
     let currentProfile = 'dashboard';
     let currentTab = 'all'; 
     let currentViewMode = 'list';
     let editingRecordId = null; 
+
+    // 현재 기기의 기본 프로필 (남편/아내) 기억
+    let deviceDefaultUser = localStorage.getItem('device_default_user') || '남편';
 
     const defaultData = {
         2026: {
@@ -893,7 +918,6 @@
             try { return JSON.parse(savedV2); } catch(e) {}
         }
 
-        // 기존 v1 데이터 이관 복구
         const savedV1 = localStorage.getItem('leave_app_data');
         if (savedV1) {
             try {
@@ -1003,7 +1027,7 @@
         renderRecords();
     }
 
-    /* --- 5. 대시보드 및 연산 로직 --- */
+    /* --- 5. 연산 및 렌더링 --- */
     function render() {
         renderYearDropdown();
 
@@ -1106,7 +1130,7 @@
             wrapper.className = 'record-card-wrapper';
             wrapper.innerHTML = `
                 <div class="delete-btn-behind" onclick="deleteRecord('${r.id}')">삭제</div>
-                <div class="record-card" onclick="openEditModal('${r.id}')">
+                <div class="record-card" id="card-${r.id}" onclick="openEditModal('${r.id}')">
                     <div class="record-left">
                         <div class="record-badge-row">
                             <span class="user-tag ${userBadgeClass}">${r.user}</span>
@@ -1119,6 +1143,17 @@
                     <div class="record-days">${deductVal.toFixed(2)}일</div>
                 </div>
             `;
+
+            // 스와이프 삭제 기능 복구
+            let startX = 0;
+            const cardEl = wrapper.querySelector('.record-card');
+            cardEl.addEventListener('touchstart', e => { startX = e.touches[0].clientX; });
+            cardEl.addEventListener('touchmove', e => {
+                let moveX = e.touches[0].clientX - startX;
+                if (moveX < -30) cardEl.style.transform = 'translateX(-80px)';
+                else if (moveX > 30) cardEl.style.transform = 'translateX(0px)';
+            });
+
             container.appendChild(wrapper);
         });
     }
@@ -1154,8 +1189,11 @@
             </div>
             <div class="cal-grid" id="calGrid"></div>
             <div class="cal-legend">
-                <div class="legend-item"><span class="legend-dot dot-husband"></span>남편</div>
-                <div class="legend-item"><span class="legend-dot dot-wife"></span>아내</div>
+                <div class="legend-item"><span class="legend-dot dot-joint"></span>공동</div>
+                <div class="legend-item"><span class="legend-dot dot-personal"></span>개인</div>
+                <div class="legend-item"><span class="legend-dot dot-reward"></span>포상</div>
+                <div class="legend-item"><span class="legend-dot dot-husband"></span>남편점</div>
+                <div class="legend-item"><span class="legend-dot dot-wife"></span>아내점</div>
             </div>
         `;
 
@@ -1191,20 +1229,30 @@
             const dayRecords = filtered.filter(r => r.date === dateStr);
 
             if (dayRecords.length > 0) {
-                const hasHusband = dayRecords.some(r => r.user === "남편");
-                const hasWife = dayRecords.some(r => r.user === "아내");
+                const primaryRec = dayRecords[0];
+                const deductVal = parseFloat(primaryRec.deduct) || 1.0;
 
-                let fillHtml = '<div class="cal-fill-container">';
-                if (hasHusband) fillHtml += `<div class="cal-fill-split bg-personal"></div>`;
-                if (hasWife) fillHtml += `<div class="cal-fill-split bg-wife"></div>`;
-                fillHtml += '</div>';
+                let fillClass = "fill-1-0";
+                if (deductVal === 0.5) fillClass = "fill-0-5";
+                if (deductVal === 0.25) fillClass = "fill-0-25";
+
+                let bgClass = "bg-personal";
+                if (primaryRec.type === "공동연차") bgClass = "bg-joint";
+                if (primaryRec.type === "포상휴가") bgClass = "bg-reward";
+
+                // 남편/아내 사용자 구분 점 뱃지 생성
+                let userDotsHtml = '<div class="user-dots-container">';
+                if (dayRecords.some(r => r.user === "남편")) userDotsHtml += '<span class="user-dot user-dot-husband"></span>';
+                if (dayRecords.some(r => r.user === "아내")) userDotsHtml += '<span class="user-dot user-dot-wife"></span>';
+                userDotsHtml += '</div>';
 
                 cell.innerHTML = `
-                    ${fillHtml}
+                    <div class="cal-fill ${fillClass} ${bgClass}"></div>
+                    ${userDotsHtml}
                     <span class="cal-day-num">${day}</span>
-                    <span class="cal-deduct-text">${dayRecords[0].deduct}일</span>
+                    <span class="cal-deduct-text">${deductVal}일</span>
                 `;
-                cell.onclick = () => openEditModal(dayRecords[0].id);
+                cell.onclick = () => openEditModal(primaryRec.id);
             } else {
                 cell.innerHTML = `<span class="cal-day-num">${day}</span>`;
                 cell.onclick = () => openAddModalWithDate(dateStr);
@@ -1214,6 +1262,7 @@
         }
     }
 
+    /* --- 6. 모달 및 프로필 제어 --- */
     function goToToday() {
         const today = new Date();
         currentYear = today.getFullYear();
@@ -1245,7 +1294,11 @@
         document.getElementById('modalDeleteBtn').style.display = 'none';
         document.getElementById('btnSaveAndContinue').style.display = 'block';
 
-        const defaultUser = currentProfile === '아내' ? '아내' : '남편';
+        // 탭 상태 또는 기기 디폴트값을 기준으로 대상 프로필 설정
+        let defaultUser = deviceDefaultUser;
+        if (currentProfile === '남편' || currentProfile === '아내') {
+            defaultUser = currentProfile;
+        }
         document.getElementById('inputUser').value = defaultUser;
 
         const todayStr = new Date().toISOString().split('T')[0];
@@ -1257,6 +1310,12 @@
         document.getElementById('inputNote').value = ''; 
         handleTypeChange();
         document.getElementById('addModal').style.display = 'flex';
+    }
+
+    function onUserSelectChange(val) {
+        // 모달에서 프로필을 바꾸면 해당 기기의 기본 사용자로 저장
+        deviceDefaultUser = val;
+        localStorage.setItem('device_default_user', val);
     }
 
     function openEditModal(id) {
