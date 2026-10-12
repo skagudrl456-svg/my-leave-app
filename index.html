@@ -3,8 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-    <title>연차 관리</title>
+    <title>부부 연차 관리 & 대시보드</title>
     <link rel="apple-touch-icon" href="apple-touch-icon.png">
+    
+    <!-- Firebase SDK (v9 호환 모듈) -->
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.23.0/firebase-firestore-compat.js"></script>
+
     <style>
         :root {
             --bg-color: #f2f2f7;
@@ -20,6 +25,8 @@
             --accent-purple: #af52de;
             --accent-purple-rgb: 175, 82, 222;
             --accent-red: #ff3b30;
+            --accent-pink: #ff2d55;
+            --accent-pink-rgb: 255, 45, 85;
             --border-color: #e5e5ea;
             --input-bg: #ffffff;
             --tab-bg: #e3e3e8;
@@ -44,6 +51,8 @@
                 --accent-purple: #bf5af2;
                 --accent-purple-rgb: 191, 90, 242;
                 --accent-red: #ff453a;
+                --accent-pink: #ff375f;
+                --accent-pink-rgb: 255, 55, 95;
                 --border-color: #38383a;
                 --input-bg: #2c2c2e;
                 --tab-bg: #2c2c2e;
@@ -85,9 +94,7 @@
         }
 
         @media screen and (max-width: 500px) {
-            body {
-                background-color: var(--bg-color);
-            }
+            body { background-color: var(--bg-color); }
             .iphone-frame {
                 max-width: 100%;
                 height: 100vh;
@@ -180,6 +187,32 @@
             background-color: var(--card-bg);
         }
 
+        .user-toggle {
+            display: flex;
+            background-color: var(--tab-bg);
+            border-radius: 12px;
+            padding: 2px;
+            gap: 2px;
+        }
+
+        .user-btn {
+            border: none;
+            background: none;
+            padding: 6px 10px;
+            font-size: 12px;
+            font-weight: 700;
+            color: var(--text-sub);
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .user-btn.active {
+            background-color: var(--tab-active-bg);
+            color: var(--text-main);
+            box-shadow: 0 2px 6px rgba(0,0,0,0.12);
+        }
+
         .add-btn {
             background-color: var(--tab-bg);
             border: none;
@@ -196,9 +229,7 @@
             transition: all 0.2s ease;
         }
 
-        .add-btn:active {
-            transform: scale(0.92);
-        }
+        .add-btn:active { transform: scale(0.92); }
 
         .content {
             flex: 1;
@@ -207,9 +238,87 @@
             -ms-overflow-style: none;
             scrollbar-width: none;
         }
+        .content::-webkit-scrollbar { display: none; }
 
-        .content::-webkit-scrollbar {
-            display: none;
+        /* 대시보드 카드 스타일 */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 16px;
+        }
+
+        .dash-card {
+            background: var(--card-bg);
+            border-radius: 18px;
+            padding: 14px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+        }
+
+        .dash-user-title {
+            font-size: 13px;
+            font-weight: 800;
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .dash-user-badge {
+            font-size: 10px;
+            padding: 2px 6px;
+            border-radius: 6px;
+            color: white;
+        }
+
+        .badge-husband { background-color: var(--primary); }
+        .badge-wife { background-color: var(--accent-pink); }
+
+        .dash-row {
+            display: flex;
+            justify-content: space-between;
+            font-size: 11px;
+            margin-bottom: 4px;
+            color: var(--text-sub);
+        }
+
+        .dash-val {
+            font-weight: 700;
+            color: var(--text-main);
+        }
+
+        .joint-vacation-card {
+            background: var(--card-bg);
+            border-radius: 18px;
+            padding: 14px;
+            margin-bottom: 16px;
+            border: 1px dashed var(--accent-orange);
+        }
+
+        .joint-title {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--accent-orange);
+            margin-bottom: 8px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .joint-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+        }
+
+        .joint-tag {
+            font-size: 11px;
+            background-color: rgba(255, 149, 0, 0.15);
+            color: var(--accent-orange);
+            padding: 4px 8px;
+            border-radius: 8px;
+            font-weight: 600;
         }
 
         .summary-card {
@@ -259,16 +368,8 @@
             gap: 2px;
         }
 
-        .edit-total-btn {
-            font-size: 10px;
-            cursor: pointer;
-            opacity: 0.7;
-        }
-
-        .metric-value {
-            font-size: clamp(13px, 3.6vw, 15px);
-            font-weight: 800;
-        }
+        .edit-total-btn { font-size: 10px; cursor: pointer; opacity: 0.7; }
+        .metric-value { font-size: clamp(13px, 3.6vw, 15px); font-weight: 800; }
 
         .section-header-top {
             display: flex;
@@ -277,11 +378,7 @@
             margin-bottom: 12px;
         }
 
-        .section-title {
-            font-size: clamp(18px, 4.5vw, 20px);
-            font-weight: 700;
-            letter-spacing: -0.4px;
-        }
+        .section-title { font-size: clamp(18px, 4.5vw, 20px); font-weight: 700; letter-spacing: -0.4px; }
 
         .view-mode-toggle {
             display: flex;
@@ -377,16 +474,15 @@
             cursor: pointer;
         }
 
-        .record-left {
-            display: flex;
-            flex-direction: column;
-            gap: 6px;
-        }
+        .record-left { display: flex; flex-direction: column; gap: 6px; }
+        .record-badge-row { display: flex; align-items: center; gap: 6px; }
 
-        .record-badge-row {
-            display: flex;
-            align-items: center;
-            gap: 6px;
+        .user-tag {
+            font-size: 10px;
+            font-weight: 800;
+            padding: 3px 6px;
+            border-radius: 6px;
+            color: #fff;
         }
 
         .type-tag {
@@ -410,22 +506,9 @@
             color: var(--primary);
         }
 
-        .record-date {
-            font-size: clamp(14px, 3.8vw, 15px);
-            font-weight: 600;
-            color: var(--text-main);
-        }
-
-        .record-note {
-            font-size: clamp(12px, 3.2vw, 13px);
-            color: var(--text-sub);
-        }
-
-        .record-days {
-            font-size: clamp(14px, 4vw, 16px);
-            font-weight: 800;
-            color: var(--text-main);
-        }
+        .record-date { font-size: clamp(14px, 3.8vw, 15px); font-weight: 600; color: var(--text-main); }
+        .record-note { font-size: clamp(12px, 3.2vw, 13px); color: var(--text-sub); }
+        .record-days { font-size: clamp(14px, 4vw, 16px); font-weight: 800; color: var(--text-main); }
 
         .calendar-container {
             background-color: var(--card-bg);
@@ -435,23 +518,9 @@
             box-shadow: 0 4px 15px rgba(0,0,0,0.03);
         }
 
-        .cal-header {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 14px;
-        }
-
-        .cal-header-left {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-        }
-
-        .cal-month-title {
-            font-size: clamp(15px, 4vw, 16px);
-            font-weight: 700;
-        }
+        .cal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; }
+        .cal-header-left { display: flex; align-items: center; gap: 8px; }
+        .cal-month-title { font-size: clamp(15px, 4vw, 16px); font-weight: 700; }
 
         .today-btn {
             background-color: var(--tab-bg);
@@ -464,28 +533,9 @@
             cursor: pointer;
         }
 
-        .cal-nav-btn {
-            background: none;
-            border: none;
-            color: var(--primary);
-            font-size: 18px;
-            cursor: pointer;
-            padding: 0 8px;
-        }
-
-        .cal-grid {
-            display: grid;
-            grid-template-columns: repeat(7, 1fr);
-            gap: clamp(3px, 1vw, 6px);
-            text-align: center;
-        }
-
-        .cal-day-label {
-            font-size: 11px;
-            font-weight: 600;
-            color: var(--text-sub);
-            padding-bottom: 6px;
-        }
+        .cal-nav-btn { background: none; border: none; color: var(--primary); font-size: 18px; cursor: pointer; padding: 0 8px; }
+        .cal-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: clamp(3px, 1vw, 6px); text-align: center; }
+        .cal-day-label { font-size: 11px; font-weight: 600; color: var(--text-sub); padding-bottom: 6px; }
 
         .cal-cell {
             aspect-ratio: 1;
@@ -503,45 +553,28 @@
             background-color: var(--card-sub-bg);
         }
 
-        .cal-cell.empty {
-            background: none;
-            cursor: default;
-        }
+        .cal-cell.empty { background: none; cursor: default; }
+        .cal-cell.today { border-color: var(--primary); }
 
-        .cal-cell.today {
-            border-color: var(--primary);
-        }
-
-        .cal-fill {
+        .cal-fill-container {
             position: absolute;
             bottom: 0;
             left: 0;
             right: 0;
+            top: 0;
+            display: flex;
             z-index: 1;
-            transition: height 0.3s ease;
         }
 
-        .fill-1-0 { height: 100%; }
-        .fill-0-5 { height: 50%; }
-        .fill-0-25 { height: 25%; }
+        .cal-fill-split { flex: 1; height: 100%; transition: height 0.3s ease; }
 
         .bg-joint { background-color: rgba(var(--primary-rgb), 0.35); }
         .bg-personal { background-color: rgba(var(--accent-green-rgb), 0.35); }
         .bg-reward { background-color: rgba(var(--accent-purple-rgb), 0.35); }
+        .bg-wife { background-color: rgba(var(--accent-pink-rgb), 0.35); }
 
-        .cal-day-num {
-            position: relative;
-            z-index: 2;
-        }
-
-        .cal-deduct-text {
-            position: relative;
-            z-index: 2;
-            font-size: 8px;
-            font-weight: 700;
-            margin-top: 1px;
-            opacity: 0.85;
-        }
+        .cal-day-num { position: relative; z-index: 2; }
+        .cal-deduct-text { position: relative; z-index: 2; font-size: 8px; font-weight: 700; margin-top: 1px; opacity: 0.85; }
 
         .cal-legend {
             display: flex;
@@ -554,21 +587,10 @@
             font-weight: 600;
         }
 
-        .legend-item {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-        }
-
-        .legend-dot {
-            width: 8px;
-            height: 8px;
-            border-radius: 50%;
-        }
-
-        .dot-joint { background-color: var(--primary); }
-        .dot-personal { background-color: var(--accent-green); }
-        .dot-reward { background-color: var(--accent-purple); }
+        .legend-item { display: flex; align-items: center; gap: 6px; }
+        .legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+        .dot-husband { background-color: var(--primary); }
+        .dot-wife { background-color: var(--accent-pink); }
 
         .modal {
             display: none;
@@ -586,33 +608,9 @@
             border-top: 1px solid var(--border-color);
         }
 
-        .modal-header {
-            position: relative;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-            height: 30px;
-        }
-
-        .modal-title {
-            position: absolute;
-            left: 50%;
-            transform: translateX(-50%);
-            font-size: 17px;
-            font-weight: 700;
-            white-space: nowrap;
-        }
-
-        .modal-btn {
-            background: none;
-            border: none;
-            color: var(--primary);
-            font-size: 16px;
-            font-weight: 600;
-            cursor: pointer;
-            z-index: 2;
-        }
+        .modal-header { position: relative; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; height: 30px; }
+        .modal-title { position: absolute; left: 50%; transform: translateX(-50%); font-size: 17px; font-weight: 700; white-space: nowrap; }
+        .modal-btn { background: none; border: none; color: var(--primary); font-size: 16px; font-weight: 600; cursor: pointer; z-index: 2; }
 
         .form-group {
             background-color: var(--card-bg);
@@ -622,22 +620,9 @@
             border: 1px solid var(--border-color);
         }
 
-        .form-row {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 12px 0;
-            border-bottom: 1px solid var(--border-color);
-        }
-
-        .form-row:last-child {
-            border-bottom: none;
-        }
-
-        .form-label {
-            font-size: 15px;
-            font-weight: 500;
-        }
+        .form-row { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--border-color); }
+        .form-row:last-child { border-bottom: none; }
+        .form-label { font-size: 15px; font-weight: 500; }
 
         input, select {
             border: none;
@@ -649,7 +634,6 @@
             color: var(--text-main);
         }
 
-        /* 라이트 모드 셀렉트 화살표 (회색) */
         select {
             -webkit-appearance: none;
             -moz-appearance: none;
@@ -661,23 +645,14 @@
             background-size: 14px;
         }
 
-        /* 다크 모드 셀렉트 화살표 (선명한 흰색) */
         @media (prefers-color-scheme: dark) {
             select {
                 background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ffffff' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
             }
         }
 
-        select option {
-            background-color: var(--card-bg);
-            color: var(--text-main);
-        }
-
-        input[type="date"]::-webkit-calendar-picker-indicator {
-            cursor: pointer;
-            filter: invert(0.5);
-            margin-left: 6px;
-        }
+        select option { background-color: var(--card-bg); color: var(--text-main); }
+        input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; filter: invert(0.5); margin-left: 6px; }
 
         .modal-secondary-btn {
             background-color: var(--card-bg);
@@ -691,10 +666,6 @@
             text-align: center;
             margin-top: 10px;
             transition: all 0.2s ease;
-        }
-
-        .modal-secondary-btn:active {
-            background-color: var(--tab-bg);
         }
 
         .modal-delete-btn {
@@ -711,29 +682,66 @@
             box-shadow: 0 4px 10px rgba(255, 59, 48, 0.25);
             transition: all 0.2s ease;
         }
-
-        .modal-delete-btn:active {
-            transform: scale(0.98);
-            opacity: 0.9;
-        }
     </style>
 </head>
 <body>
 
 <div class="iphone-frame">
     <div class="island"></div>
-    <div class="toast" id="toastMsg">📅 iOS 기본 캘린더와 연동되었습니다.</div>
+    <div class="toast" id="toastMsg">☁️ Firebase 실시간 동기화 완료</div>
     
     <div class="header">
         <div class="year-select-container">
             <select class="year-select-dropdown" id="yearDropdown" onchange="changeYear(this.value)">
             </select>
         </div>
+        
+        <!-- 프로필 선택 버튼 (대시보드 / 남편 / 아내) -->
+        <div class="user-toggle">
+            <button class="user-btn active" id="uBtnDash" onclick="selectProfile('dashboard')">대시보드</button>
+            <button class="user-btn" id="uBtnHusband" onclick="selectProfile('남편')">남편</button>
+            <button class="user-btn" id="uBtnWife" onclick="selectProfile('아내')">아내</button>
+        </div>
+
         <button class="add-btn" onclick="openAddModal()">+</button>
     </div>
 
     <div class="content">
-        <div class="summary-card">
+        <!-- 2인 대시보드 영역 -->
+        <div id="dashboardSection" style="display: block;">
+            <div class="dashboard-grid">
+                <!-- 남편 요약 카드 -->
+                <div class="dash-card">
+                    <div class="dash-user-title">
+                        남편 <span class="dash-user-badge badge-husband">Husband</span>
+                    </div>
+                    <div class="dash-row">발생 연차 <span class="dash-val" id="hTotal">20.0일</span></div>
+                    <div class="dash-row">사용/계획 <span class="dash-val" id="hPlan">0.0일</span></div>
+                    <div class="dash-row" style="margin-top: 6px;">잔여 연차 <span class="dash-val" style="color: var(--primary);" id="hRemaining">20.0일</span></div>
+                </div>
+
+                <!-- 아내 요약 카드 -->
+                <div class="dash-card">
+                    <div class="dash-user-title">
+                        아내 <span class="dash-user-badge badge-wife">Wife</span>
+                    </div>
+                    <div class="dash-row">발생 연차 <span class="dash-val" id="wTotal">15.0일</span></div>
+                    <div class="dash-row">사용/계획 <span class="dash-val" id="wPlan">0.0일</span></div>
+                    <div class="dash-row" style="margin-top: 6px;">잔여 연차 <span class="dash-val" style="color: var(--accent-pink);" id="wRemaining">15.0일</span></div>
+                </div>
+            </div>
+
+            <!-- 부부 동시 휴가 감지 카드 -->
+            <div class="joint-vacation-card">
+                <div class="joint-title">👩‍❤️‍👨 부부 동시 휴가 (같이 쉬는 날)</div>
+                <div class="joint-list" id="jointDatesContainer">
+                    <span style="font-size: 11px; color: var(--text-sub);">겹치는 휴가 일정이 없습니다.</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- 개별 연차 현황 카드 -->
+        <div class="summary-card" id="individualSummaryCard" style="display: none;">
             <div class="summary-title" id="summaryHeader">연차 현황</div>
             <div class="metrics-grid">
                 <div class="metric-box">
@@ -758,7 +766,7 @@
         </div>
 
         <div class="section-header-top">
-            <div class="section-title">휴가 기록</div>
+            <div class="section-title" id="sectionTitle">통합 휴가 기록</div>
             <div class="view-mode-toggle">
                 <button class="view-mode-btn active" id="btnListView" onclick="setViewMode('list')">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
@@ -779,6 +787,7 @@
         <div id="recordsContainer"></div>
     </div>
 
+    <!-- 추가 / 수정 모달 -->
     <div class="modal" id="addModal">
         <div class="modal-header">
             <button class="modal-btn" onclick="closeModal('addModal')">취소</button>
@@ -787,6 +796,13 @@
         </div>
 
         <div class="form-group">
+            <div class="form-row">
+                <span class="form-label">대상 프로필</span>
+                <select id="inputUser">
+                    <option value="남편">남편</option>
+                    <option value="아내">아내</option>
+                </select>
+            </div>
             <div class="form-row" id="startDateRow">
                 <span class="form-label">시작일</span>
                 <input type="date" id="inputStartDate" onchange="onStartDateChange()">
@@ -823,6 +839,7 @@
         <button class="modal-delete-btn" id="modalDeleteBtn" style="display: none;" onclick="deleteRecordFromModal()">삭제</button>
     </div>
 
+    <!-- 발생 연차 수정 모달 -->
     <div class="modal" id="totalEditModal" style="top: 250px;">
         <div class="modal-header">
             <button class="modal-btn" onclick="closeModal('totalEditModal')">취소</button>
@@ -839,77 +856,120 @@
 </div>
 
 <script>
+    /* --- 1. FIREBASE 설정 --- */
+    const firebaseConfig = {
+        apiKey: "AIzaSyAFJObMfD6s1sWJMQMs5ek68hgts19FngY",
+        authDomain: "our-leave-app.firebaseapp.com",
+        projectId: "our-leave-app",
+        storageBucket: "our-leave-app.firebasestorage.app",
+        messagingSenderId: "391325086433",
+        appId: "1:391325086433:web:31784a5aed7f83d4d7bda0"
+    };
+
+    let db;
+    let isFirebaseActive = false;
+
+    try {
+        if (firebaseConfig.apiKey !== "YOUR_API_KEY") {
+            firebase.initializeApp(firebaseConfig);
+            db = firebase.firestore();
+            isFirebaseActive = true;
+        }
+    } catch(e) {
+        console.warn("Firebase 연동 준비 상태입니다.");
+    }
+
+    /* --- 2. 상태 변수 --- */
     let currentYear = new Date().getFullYear();
     let currentMonth = new Date().getMonth();
+    let currentProfile = 'dashboard'; // 'dashboard', '남편', '아내'
     let currentTab = 'all'; 
     let currentViewMode = 'list';
     let editingRecordId = null; 
-    
+
     const defaultData = {
         2026: {
-            baseTotal: 20.0,
+            baseTotal: { "남편": 20.0, "아내": 15.0 },
             records: [
-                { id: 1, date: "2026-07-24", type: "공동연차", deduct: 1.0, note: "회사 지정 공동휴가" },
-                { id: 2, date: "2026-07-27", type: "공동연차", deduct: 0.5, note: "공동휴가 (반차)" },
-                { id: 3, date: "2026-07-28", type: "개인연차", deduct: 0.25, note: "개인 업무 (반반차)" },
-                { id: 4, date: "2026-08-14", type: "개인연차", deduct: 1.0, note: "여름 휴가" },
-                { id: 5, date: "2026-11-20", type: "개인연차", deduct: 1.0, note: "개인 사정 휴가" },
-                { id: 6, date: "2026-12-25", type: "포상휴가", deduct: 1.0, note: "연말 우수 포상 휴가" }
+                { id: "1", user: "남편", date: "2026-07-24", type: "공동연차", deduct: 1.0, note: "회사 지정 공동휴가" },
+                { id: "2", user: "아내", date: "2026-07-24", type: "개인연차", deduct: 1.0, note: "여름 휴가 동행" },
+                { id: "3", user: "남편", date: "2026-08-14", type: "개인연차", deduct: 1.0, note: "여름 휴가" }
             ]
-        },
-        2027: { baseTotal: 15.0, records: [] },
-        2028: { baseTotal: 18.0, records: [] }
+        }
     };
 
-    let leaveData = loadDataFromStorage();
+    let leaveData = loadLocalData();
 
-    function loadDataFromStorage() {
-        const saved = localStorage.getItem('leave_app_data');
+    function loadLocalData() {
+        const saved = localStorage.getItem('leave_app_data_v2');
         if (saved) {
-            try {
-                const parsed = JSON.parse(saved);
-                Object.keys(parsed).forEach(yr => {
-                    if (parsed[yr].records) {
-                        parsed[yr].records.forEach(r => {
-                            let val = r.deduct !== undefined ? r.deduct : r.days;
-                            if (val === undefined || val === null || isNaN(parseFloat(val))) {
-                                val = 1.0;
-                            }
-                            r.deduct = parseFloat(val);
-                        });
-                    }
-                });
-                return parsed;
-            } catch (e) {
-                return defaultData;
-            }
+            try { return JSON.parse(saved); } catch(e) { return defaultData; }
         }
         return defaultData;
     }
 
-    function saveDataToStorage() {
-        localStorage.setItem('leave_app_data', JSON.stringify(leaveData));
+    function saveLocalData() {
+        localStorage.setItem('leave_app_data_v2', JSON.stringify(leaveData));
+    }
+
+    /* --- 3. FIREBASE 실시간 동기화 --- */
+    function initFirebaseSync() {
+        if (!isFirebaseActive) return;
+
+        db.collection("leave_management").doc("shared_data")
+            .onSnapshot((doc) => {
+                if (doc.exists) {
+                    leaveData = doc.data();
+                    saveLocalData();
+                    render();
+                } else {
+                    syncToFirebase();
+                }
+            });
+    }
+
+    function syncToFirebase() {
+        if (!isFirebaseActive) {
+            saveLocalData();
+            return;
+        }
+        db.collection("leave_management").doc("shared_data").set(leaveData)
+            .then(() => showToast("☁️ 서버 동기화 완료"))
+            .catch(err => console.error(err));
+    }
+
+    /* --- 4. 프로필 및 UI 제어 --- */
+    function selectProfile(profile) {
+        currentProfile = profile;
+        document.getElementById('uBtnDash').classList.toggle('active', profile === 'dashboard');
+        document.getElementById('uBtnHusband').classList.toggle('active', profile === '남편');
+        document.getElementById('uBtnWife').classList.toggle('active', profile === '아내');
+
+        const isDash = profile === 'dashboard';
+        document.getElementById('dashboardSection').style.display = isDash ? 'block' : 'none';
+        document.getElementById('individualSummaryCard').style.display = isDash ? 'none' : 'block';
+        document.getElementById('sectionTitle').innerText = isDash ? "통합 휴가 기록" : `${profile} 휴가 기록`;
+
+        render();
     }
 
     function renderYearDropdown() {
-        const yearDropdown = document.getElementById('yearDropdown');
-        yearDropdown.innerHTML = '';
-
+        const dropdown = document.getElementById('yearDropdown');
+        dropdown.innerHTML = '';
         const todayYear = new Date().getFullYear();
-        const startYear = 2026;
         const maxYearNeeded = Math.max(todayYear + 3, currentYear);
 
-        for (let y = startYear; y <= maxYearNeeded; y++) {
+        for (let y = 2026; y <= maxYearNeeded; y++) {
             const opt = document.createElement('option');
             opt.value = y;
             opt.innerText = `${y}년`;
             if (y === currentYear) opt.selected = true;
-            yearDropdown.appendChild(opt);
+            dropdown.appendChild(opt);
         }
     }
 
     function changeYear(year) {
-        currentYear = parseInt(year);
+        currentYear = parseInt(year, 10);
         render();
     }
 
@@ -917,7 +977,6 @@
         currentViewMode = mode;
         document.getElementById('btnListView').classList.toggle('active', mode === 'list');
         document.getElementById('btnCalView').classList.toggle('active', mode === 'calendar');
-        
         selectTab('all');
     }
 
@@ -930,39 +989,75 @@
         renderRecords();
     }
 
+    /* --- 5. 대시보드 및 연산 로직 --- */
     function render() {
         renderYearDropdown();
 
         if (!leaveData[currentYear]) {
-            leaveData[currentYear] = { baseTotal: 20.0, records: [] };
+            leaveData[currentYear] = { baseTotal: { "남편": 20.0, "아내": 15.0 }, records: [] };
         }
 
         const yearData = leaveData[currentYear];
-        const rewardCount = yearData.records.filter(r => r.type === "포상휴가").length;
-        const computedTotal = yearData.baseTotal + rewardCount;
+        if (!yearData.baseTotal || typeof yearData.baseTotal !== 'object') {
+            yearData.baseTotal = { "남편": 20.0, "아내": 15.0 };
+        }
 
-        document.getElementById('summaryHeader').innerText = `${currentYear}년 연차 현황`;
-        document.getElementById('totalDays').innerText = computedTotal.toFixed(2);
+        const records = yearData.records || [];
 
-        const plan = yearData.records.reduce((acc, r) => acc + (parseFloat(r.deduct) || 1.0), 0);
+        // 남편 데이터 연산
+        const hRewards = records.filter(r => r.user === "남편" && r.type === "포상휴가").length;
+        const hTotal = (yearData.baseTotal["남편"] || 20.0) + hRewards;
+        const hPlan = records.filter(r => r.user === "남편").reduce((a, r) => a + (parseFloat(r.deduct) || 1.0), 0);
         const todayStr = new Date().toISOString().split('T')[0];
-        const used = yearData.records
-            .filter(r => r.date <= todayStr)
-            .reduce((acc, r) => acc + (parseFloat(r.deduct) || 1.0), 0);
+        const hUsed = records.filter(r => r.user === "남편" && r.date <= todayStr).reduce((a, r) => a + (parseFloat(r.deduct) || 1.0), 0);
 
-        document.getElementById('planDays').innerText = plan.toFixed(2);
-        document.getElementById('currRemaining').innerText = (computedTotal - used).toFixed(2);
-        document.getElementById('expRemaining').innerText = (computedTotal - plan).toFixed(2);
+        // 아내 데이터 연산
+        const wRewards = records.filter(r => r.user === "아내" && r.type === "포상휴가").length;
+        const wTotal = (yearData.baseTotal["아내"] || 15.0) + wRewards;
+        const wPlan = records.filter(r => r.user === "아내").reduce((a, r) => a + (parseFloat(r.deduct) || 1.0), 0);
+        const wUsed = records.filter(r => r.user === "아내" && r.date <= todayStr).reduce((a, r) => a + (parseFloat(r.deduct) || 1.0), 0);
+
+        // 대시보드 화면 업데이트
+        document.getElementById('hTotal').innerText = `${hTotal.toFixed(1)}일`;
+        document.getElementById('hPlan').innerText = `${hPlan.toFixed(1)}일`;
+        document.getElementById('hRemaining').innerText = `${(hTotal - hPlan).toFixed(1)}일`;
+
+        document.getElementById('wTotal').innerText = `${wTotal.toFixed(1)}일`;
+        document.getElementById('wPlan').innerText = `${wPlan.toFixed(1)}일`;
+        document.getElementById('wRemaining').innerText = `${(wTotal - wPlan).toFixed(1)}일`;
+
+        // 부부 동시 휴가 감지
+        const hDates = records.filter(r => r.user === "남편").map(r => r.date);
+        const wDates = records.filter(r => r.user === "아내").map(r => r.date);
+        const jointDates = hDates.filter(d => wDates.includes(d)).sort();
+
+        const jointContainer = document.getElementById('jointDatesContainer');
+        if (jointDates.length > 0) {
+            jointContainer.innerHTML = jointDates.map(d => `<span class="joint-tag">🗓️ ${d}</span>`).join('');
+        } else {
+            jointContainer.innerHTML = `<span style="font-size: 11px; color: var(--text-sub);">겹치는 휴가 일정이 없습니다.</span>`;
+        }
+
+        // 개별 연차 카드 업데이트 (남편/아내 선택 시)
+        if (currentProfile !== 'dashboard') {
+            const isH = currentProfile === "남편";
+            const curTotal = isH ? hTotal : wTotal;
+            const curPlan = isH ? hPlan : wPlan;
+            const curUsed = isH ? hUsed : wUsed;
+
+            document.getElementById('summaryHeader').innerText = `${currentYear}년 ${currentProfile} 연차 현황`;
+            document.getElementById('totalDays').innerText = curTotal.toFixed(2);
+            document.getElementById('planDays').innerText = curPlan.toFixed(2);
+            document.getElementById('currRemaining').innerText = (curTotal - curUsed).toFixed(2);
+            document.getElementById('expRemaining').innerText = (curTotal - curPlan).toFixed(2);
+        }
 
         renderRecords();
     }
 
     function renderRecords() {
-        if (currentViewMode === 'list') {
-            renderListView();
-        } else {
-            renderCalendarView();
-        }
+        if (currentViewMode === 'list') renderListView();
+        else renderCalendarView();
     }
 
     function renderListView() {
@@ -970,37 +1065,45 @@
         const container = document.getElementById('recordsContainer');
         container.innerHTML = "";
 
-        let filteredRecords = yearData.records;
-        if (currentTab !== 'all') {
-            filteredRecords = yearData.records.filter(r => r.type === currentTab);
+        let filtered = yearData.records || [];
+
+        // 프로필 필터
+        if (currentProfile !== 'dashboard') {
+            filtered = filtered.filter(r => r.user === currentProfile);
         }
 
-        filteredRecords.sort((a, b) => new Date(a.date) - new Date(b.date));
+        // 카테고리 탭 필터
+        if (currentTab !== 'all') {
+            filtered = filtered.filter(r => r.type === currentTab);
+        }
 
-        if (filteredRecords.length === 0) {
+        filtered.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+        if (filtered.length === 0) {
             container.innerHTML = '<div style="text-align:center; color:var(--text-sub); padding: 40px 0; font-size: 14px;">기록된 내역이 없습니다.</div>';
             return;
         }
 
         const todayStr = new Date().toISOString().split('T')[0];
 
-        filteredRecords.forEach(r => {
-            let tagClass = "tag-personal";
-            if (r.type === "공동연차") tagClass = "tag-joint";
-            if (r.type === "포상휴가") tagClass = "tag-reward";
+        filtered.forEach(r => {
+            let typeTagClass = "tag-personal";
+            if (r.type === "공동연차") typeTagClass = "tag-joint";
+            if (r.type === "포상휴가") typeTagClass = "tag-reward";
 
+            const userBadgeClass = r.user === "남편" ? "badge-husband" : "badge-wife";
             const isUpcoming = r.date > todayStr;
             const deductVal = parseFloat(r.deduct) || 1.0;
 
             const wrapper = document.createElement('div');
             wrapper.className = 'record-card-wrapper';
-
             wrapper.innerHTML = `
-                <div class="delete-btn-behind" onclick="deleteRecord(${r.id})">삭제</div>
-                <div class="record-card" id="card-${r.id}" onclick="openEditModal(${r.id})">
+                <div class="delete-btn-behind" onclick="deleteRecord('${r.id}')">삭제</div>
+                <div class="record-card" onclick="openEditModal('${r.id}')">
                     <div class="record-left">
                         <div class="record-badge-row">
-                            <span class="type-tag ${tagClass}">${r.type}</span>
+                            <span class="user-tag ${userBadgeClass}">${r.user}</span>
+                            <span class="type-tag ${typeTagClass}">${r.type}</span>
                             ${isUpcoming ? `<span class="upcoming-tag">예정</span>` : ''}
                             <span class="record-date">${r.date}</span>
                         </div>
@@ -1009,17 +1112,6 @@
                     <div class="record-days">${deductVal.toFixed(2)}일</div>
                 </div>
             `;
-
-            let startX = 0;
-            const cardEl = wrapper.querySelector('.record-card');
-            
-            cardEl.addEventListener('touchstart', e => { startX = e.touches[0].clientX; });
-            cardEl.addEventListener('touchmove', e => {
-                let moveX = e.touches[0].clientX - startX;
-                if (moveX < -30) cardEl.style.transform = 'translateX(-80px)';
-                else if (moveX > 30) cardEl.style.transform = 'translateX(0px)';
-            });
-
             container.appendChild(wrapper);
         });
     }
@@ -1029,10 +1121,13 @@
         container.innerHTML = "";
 
         const yearData = leaveData[currentYear];
-        let filteredRecords = yearData.records;
-        
+        let filtered = yearData.records || [];
+
+        if (currentProfile !== 'dashboard') {
+            filtered = filtered.filter(r => r.user === currentProfile);
+        }
         if (currentTab !== 'all') {
-            filteredRecords = yearData.records.filter(r => r.type === currentTab);
+            filtered = filtered.filter(r => r.type === currentTab);
         }
 
         const calWrapper = document.createElement('div');
@@ -1052,17 +1147,15 @@
             </div>
             <div class="cal-grid" id="calGrid"></div>
             <div class="cal-legend">
-                <div class="legend-item"><span class="legend-dot dot-joint"></span>공동연차</div>
-                <div class="legend-item"><span class="legend-dot dot-personal"></span>개인연차</div>
-                <div class="legend-item"><span class="legend-dot dot-reward"></span>포상휴가</div>
+                <div class="legend-item"><span class="legend-dot dot-husband"></span>남편</div>
+                <div class="legend-item"><span class="legend-dot dot-wife"></span>아내</div>
             </div>
         `;
 
         container.appendChild(calWrapper);
 
         const grid = document.getElementById('calGrid');
-        const dayLabels = ["일", "월", "화", "수", "목", "금", "토"];
-        dayLabels.forEach(lbl => {
+        ["일", "월", "화", "수", "목", "금", "토"].forEach(lbl => {
             const el = document.createElement('div');
             el.className = 'cal-day-label';
             el.innerText = lbl;
@@ -1088,24 +1181,23 @@
             cell.className = 'cal-cell';
             if (dateStr === todayStr) cell.classList.add('today');
 
-            const record = filteredRecords.find(r => r.date === dateStr);
+            const dayRecords = filtered.filter(r => r.date === dateStr);
 
-            if (record) {
-                const deductVal = parseFloat(record.deduct) || 1.0;
-                let fillClass = "fill-1-0";
-                if (deductVal === 0.5) fillClass = "fill-0-5";
-                if (deductVal === 0.25) fillClass = "fill-0-25";
+            if (dayRecords.length > 0) {
+                const hasHusband = dayRecords.some(r => r.user === "남편");
+                const hasWife = dayRecords.some(r => r.user === "아내");
 
-                let bgClass = "bg-personal";
-                if (record.type === "공동연차") bgClass = "bg-joint";
-                if (record.type === "포상휴가") bgClass = "bg-reward";
+                let fillHtml = '<div class="cal-fill-container">';
+                if (hasHusband) fillHtml += `<div class="cal-fill-split bg-personal"></div>`;
+                if (hasWife) fillHtml += `<div class="cal-fill-split bg-wife"></div>`;
+                fillHtml += '</div>';
 
                 cell.innerHTML = `
-                    <div class="cal-fill ${fillClass} ${bgClass}"></div>
+                    ${fillHtml}
                     <span class="cal-day-num">${day}</span>
-                    <span class="cal-deduct-text">${deductVal}일</span>
+                    <span class="cal-deduct-text">${dayRecords[0].deduct}일</span>
                 `;
-                cell.onclick = () => openEditModal(record.id);
+                cell.onclick = () => openEditModal(dayRecords[0].id);
             } else {
                 cell.innerHTML = `<span class="cal-day-num">${day}</span>`;
                 cell.onclick = () => openAddModalWithDate(dateStr);
@@ -1115,6 +1207,7 @@
         }
     }
 
+    /* --- 6. 모달 및 C.R.U.D 처리 --- */
     function goToToday() {
         const today = new Date();
         currentYear = today.getFullYear();
@@ -1130,7 +1223,7 @@
 
     function nextMonth() {
         if (currentMonth < 11) currentMonth++;
-        else { currentMonth = 0; currentYear++; }
+        else { currentMonth = 0; currentYear--; }
         render();
     }
 
@@ -1145,7 +1238,10 @@
         document.getElementById('modalTitle').innerText = "휴가 추가";
         document.getElementById('modalDeleteBtn').style.display = 'none';
         document.getElementById('btnSaveAndContinue').style.display = 'block';
-        
+
+        const defaultUser = currentProfile === '아내' ? '아내' : '남편';
+        document.getElementById('inputUser').value = defaultUser;
+
         const todayStr = new Date().toISOString().split('T')[0];
         document.getElementById('inputStartDate').value = todayStr;
         document.getElementById('inputEndDate').value = todayStr;
@@ -1162,10 +1258,11 @@
         document.getElementById('modalTitle').innerText = "휴가 수정";
         document.getElementById('modalDeleteBtn').style.display = 'block';
         document.getElementById('btnSaveAndContinue').style.display = 'none';
-        
+
         const record = leaveData[currentYear].records.find(r => r.id === id);
         if (!record) return;
 
+        document.getElementById('inputUser').value = record.user || "남편";
         document.getElementById('inputStartDate').value = record.date;
         document.getElementById('endDateRow').style.display = 'none';
         document.getElementById('inputType').value = record.type;
@@ -1182,72 +1279,8 @@
         document.getElementById('addModal').style.display = 'flex';
     }
 
-    function deleteRecordFromModal() {
-        if (editingRecordId !== null) {
-            deleteRecord(editingRecordId);
-            closeModal('addModal');
-        }
-    }
-
-    function openTotalEditModal() {
-        const yearData = leaveData[currentYear];
-        document.getElementById('inputBaseTotal').value = Math.round(yearData.baseTotal);
-        document.getElementById('totalEditModal').style.display = 'flex';
-    }
-
-    function saveTotalDays() {
-        const newVal = parseInt(document.getElementById('inputBaseTotal').value, 10);
-        if (!isNaN(newVal) && newVal >= 0) {
-            leaveData[currentYear].baseTotal = newVal;
-            saveDataToStorage();
-            render();
-            closeModal('totalEditModal');
-        } else {
-            alert("올바른 수량을 입력해 주세요.");
-        }
-    }
-
-    function deleteRecord(id) {
-        if (confirm("해당 휴가 기록을 삭제하시겠습니까?")) {
-            leaveData[currentYear].records = leaveData[currentYear].records.filter(r => r.id !== id);
-            saveDataToStorage();
-            render();
-        }
-    }
-
-    function closeModal(modalId) {
-        document.getElementById(modalId).style.display = 'none';
-    }
-
-    function onStartDateChange() {
-        const startVal = document.getElementById('inputStartDate').value;
-        const endDateInput = document.getElementById('inputEndDate');
-        
-        if (startVal && editingRecordId === null) {
-            endDateInput.value = startVal;
-            endDateInput.min = startVal;
-            setTimeout(() => {
-                endDateInput.focus();
-                if (typeof endDateInput.showPicker === 'function') {
-                    endDateInput.showPicker();
-                }
-            }, 100);
-        }
-    }
-
-    function handleTypeChange() {
-        const type = document.getElementById('inputType').value;
-        const deductRow = document.getElementById('deductRow');
-        
-        if (type === "공동연차" || type === "포상휴가") {
-            deductRow.style.display = "none";
-            document.getElementById('inputDeduct').value = "1";
-        } else {
-            deductRow.style.display = "flex";
-        }
-    }
-
     function saveRecord(keepOpen = false) {
+        const user = document.getElementById('inputUser').value;
         const startInput = document.getElementById('inputStartDate');
         const startStr = startInput.value;
         const type = document.getElementById('inputType').value;
@@ -1258,14 +1291,14 @@
         if (!startStr) return alert("날짜를 입력해 주세요.");
 
         const targetYear = parseInt(startStr.split('-')[0], 10);
-
         if (!leaveData[targetYear]) {
-            leaveData[targetYear] = { baseTotal: 20.0, records: [] };
+            leaveData[targetYear] = { baseTotal: { "남편": 20.0, "아내": 15.0 }, records: [] };
         }
 
         if (editingRecordId !== null) {
             const record = leaveData[currentYear].records.find(r => r.id === editingRecordId);
             if (record) {
+                record.user = user;
                 record.date = startStr;
                 record.type = type;
                 record.deduct = deduct;
@@ -1284,10 +1317,11 @@
                 if (dayOfWeek !== 0 && dayOfWeek !== 6) {
                     const itemYear = curr.getFullYear();
                     if (!leaveData[itemYear]) {
-                        leaveData[itemYear] = { baseTotal: 20.0, records: [] };
+                        leaveData[itemYear] = { baseTotal: { "남편": 20.0, "아내": 15.0 }, records: [] };
                     }
                     leaveData[itemYear].records.push({
-                        id: Date.now() + Math.random(),
+                        id: (Date.now() + Math.random()).toString(),
+                        user: user,
                         date: curr.toISOString().split('T')[0],
                         type: type,
                         deduct: deduct,
@@ -1299,24 +1333,75 @@
         }
 
         currentYear = targetYear;
-
-        saveDataToStorage();
-        render();
+        syncToFirebase();
 
         if (keepOpen) {
             document.getElementById('inputNote').value = '';
-            
             let nextDate = new Date(startStr);
             nextDate.setDate(nextDate.getDate() + 1);
             const nextDateStr = nextDate.toISOString().split('T')[0];
-            
             startInput.value = nextDateStr;
             document.getElementById('inputEndDate').value = nextDateStr;
-
             showToast("휴가가 추가되었습니다.");
         } else {
             closeModal('addModal');
-            showToast("📅 iOS 기본 캘린더와 연동되었습니다.");
+        }
+    }
+
+    function deleteRecord(id) {
+        if (confirm("해당 휴가 기록을 삭제하시겠습니까?")) {
+            leaveData[currentYear].records = leaveData[currentYear].records.filter(r => r.id !== id);
+            syncToFirebase();
+        }
+    }
+
+    function deleteRecordFromModal() {
+        if (editingRecordId !== null) {
+            deleteRecord(editingRecordId);
+            closeModal('addModal');
+        }
+    }
+
+    function openTotalEditModal() {
+        if (currentProfile === 'dashboard') return alert("상단에서 남편 또는 아내 프로필을 선택한 후 발생 연차를 수정해 주세요.");
+        const yearData = leaveData[currentYear];
+        const base = yearData.baseTotal[currentProfile] || 20.0;
+        document.getElementById('inputBaseTotal').value = Math.round(base);
+        document.getElementById('totalEditModal').style.display = 'flex';
+    }
+
+    function saveTotalDays() {
+        const newVal = parseInt(document.getElementById('inputBaseTotal').value, 10);
+        if (!isNaN(newVal) && newVal >= 0) {
+            leaveData[currentYear].baseTotal[currentProfile] = newVal;
+            syncToFirebase();
+            closeModal('totalEditModal');
+        } else {
+            alert("올바른 수량을 입력해 주세요.");
+        }
+    }
+
+    function closeModal(modalId) {
+        document.getElementById(modalId).style.display = 'none';
+    }
+
+    function onStartDateChange() {
+        const startVal = document.getElementById('inputStartDate').value;
+        const endDateInput = document.getElementById('inputEndDate');
+        if (startVal && editingRecordId === null) {
+            endDateInput.value = startVal;
+            endDateInput.min = startVal;
+        }
+    }
+
+    function handleTypeChange() {
+        const type = document.getElementById('inputType').value;
+        const deductRow = document.getElementById('deductRow');
+        if (type === "공동연차" || type === "포상휴가") {
+            deductRow.style.display = "none";
+            document.getElementById('inputDeduct').value = "1";
+        } else {
+            deductRow.style.display = "flex";
         }
     }
 
@@ -1324,11 +1409,11 @@
         const toast = document.getElementById('toastMsg');
         toast.innerText = msg;
         toast.style.display = 'block';
-        setTimeout(() => {
-            toast.style.display = 'none';
-        }, 2000);
+        setTimeout(() => { toast.style.display = 'none'; }, 2000);
     }
 
+    /* 초기화 */
+    initFirebaseSync();
     render();
 </script>
 </body>
