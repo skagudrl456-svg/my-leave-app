@@ -609,6 +609,7 @@
         .dot-husband { background-color: var(--primary); }
         .dot-wife { background-color: var(--accent-pink); }
 
+        /* 모달 스타일 및 새 기간 선택 캘린더 */
         .modal {
             display: none;
             position: absolute;
@@ -623,9 +624,10 @@
             flex-direction: column;
             box-shadow: 0 -5px 25px rgba(0,0,0,0.3);
             border-top: 1px solid var(--border-color);
+            overflow-y: auto;
         }
 
-        .modal-header { position: relative; display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; height: 30px; }
+        .modal-header { position: relative; display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; height: 30px; }
         .modal-title { position: absolute; left: 50%; transform: translateX(-50%); font-size: 17px; font-weight: 700; white-space: nowrap; }
         .modal-btn { background: none; border: none; color: var(--primary); font-size: 16px; font-weight: 600; cursor: pointer; z-index: 2; }
 
@@ -633,7 +635,7 @@
             background-color: var(--card-bg);
             border-radius: 14px;
             padding: 6px 14px;
-            margin-bottom: 16px;
+            margin-bottom: 14px;
             border: 1px solid var(--border-color);
         }
 
@@ -669,7 +671,47 @@
         }
 
         select option { background-color: var(--card-bg); color: var(--text-main); }
-        input[type="date"]::-webkit-calendar-picker-indicator { cursor: pointer; filter: invert(0.5); margin-left: 6px; }
+
+        /* 모달 내 기간 선택 캘린더 스타일 */
+        .picker-cal-box {
+            background-color: var(--card-bg);
+            border-radius: 16px;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            margin-bottom: 14px;
+        }
+
+        .picker-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+
+        .picker-title { font-size: 14px; font-weight: 700; color: var(--primary); }
+        .picker-selected-range { font-size: 12px; font-weight: 600; color: var(--text-sub); }
+
+        .picker-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 2px; text-align: center; }
+        .picker-day-label { font-size: 10px; font-weight: 600; color: var(--text-sub); padding-bottom: 4px; }
+
+        .picker-cell {
+            aspect-ratio: 1.1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+            font-weight: 600;
+            border-radius: 8px;
+            cursor: pointer;
+            position: relative;
+            user-select: none;
+        }
+
+        .picker-cell.empty { cursor: default; }
+        .picker-cell.start-date { background-color: var(--primary) !important; color: white !important; border-radius: 8px 0 0 8px; }
+        .picker-cell.end-date { background-color: var(--primary) !important; color: white !important; border-radius: 0 8px 8px 0; }
+        .picker-cell.single-date { background-color: var(--primary) !important; color: white !important; border-radius: 8px !important; }
+        .picker-cell.in-range { background-color: rgba(var(--primary-rgb), 0.2); color: var(--primary); border-radius: 0; }
 
         .modal-secondary-btn {
             background-color: var(--card-bg);
@@ -729,18 +771,18 @@
                     <div class="dash-user-title">
                         남편 <span class="dash-user-badge badge-husband">Husband</span>
                     </div>
-                    <div class="dash-row">발생 연차 <span class="dash-val" id="hTotal">20.0일</span></div>
-                    <div class="dash-row">사용/계획 <span class="dash-val" id="hPlan">0.0일</span></div>
-                    <div class="dash-row" style="margin-top: 6px;">잔여 연차 <span class="dash-val" style="color: var(--primary);" id="hRemaining">20.0일</span></div>
+                    <div class="dash-row">발생 연차 <span class="dash-val" id="hTotal">20.00일</span></div>
+                    <div class="dash-row">사용/계획 <span class="dash-val" id="hPlan">0.00일</span></div>
+                    <div class="dash-row" style="margin-top: 6px;">잔여 연차 <span class="dash-val" style="color: var(--primary);" id="hRemaining">20.00일</span></div>
                 </div>
 
                 <div class="dash-card" onclick="selectProfile('아내')">
                     <div class="dash-user-title">
                         아내 <span class="dash-user-badge badge-wife">Wife</span>
                     </div>
-                    <div class="dash-row">발생 연차 <span class="dash-val" id="wTotal">15.0일</span></div>
-                    <div class="dash-row">사용/계획 <span class="dash-val" id="wPlan">0.0일</span></div>
-                    <div class="dash-row" style="margin-top: 6px;">잔여 연차 <span class="dash-val" style="color: var(--accent-pink);" id="wRemaining">15.0일</span></div>
+                    <div class="dash-row">발생 연차 <span class="dash-val" id="wTotal">15.00일</span></div>
+                    <div class="dash-row">사용/계획 <span class="dash-val" id="wPlan">0.00일</span></div>
+                    <div class="dash-row" style="margin-top: 6px;">잔여 연차 <span class="dash-val" style="color: var(--accent-pink);" id="wRemaining">15.00일</span></div>
                 </div>
             </div>
 
@@ -798,6 +840,7 @@
         <div id="recordsContainer"></div>
     </div>
 
+    <!-- 휴가 추가/수정 모달 -->
     <div class="modal" id="addModal">
         <div class="modal-header">
             <button class="modal-btn" onclick="closeModal('addModal')">취소</button>
@@ -812,14 +855,6 @@
                     <option value="남편">남편</option>
                     <option value="아내">아내</option>
                 </select>
-            </div>
-            <div class="form-row" id="startDateRow">
-                <span class="form-label">시작일</span>
-                <input type="date" id="inputStartDate" onchange="onStartDateChange()">
-            </div>
-            <div class="form-row" id="endDateRow">
-                <span class="form-label">종료일</span>
-                <input type="date" id="inputEndDate">
             </div>
             <div class="form-row">
                 <span class="form-label">휴가 분류</span>
@@ -837,6 +872,19 @@
                     <option value="0.25">0.25일 (반반차)</option>
                 </select>
             </div>
+        </div>
+
+        <!-- 모달 내 달력 기반 기간 선택 피커 -->
+        <div class="picker-cal-box">
+            <div class="picker-header">
+                <div class="picker-title" id="pickerCalTitle">2026년 10월</div>
+                <div style="display: flex; gap: 8px; align-items: center;">
+                    <button class="cal-nav-btn" style="font-size:14px;" onclick="prevPickerMonth()">◀</button>
+                    <button class="cal-nav-btn" style="font-size:14px;" onclick="nextPickerMonth()">▶</button>
+                </div>
+            </div>
+            <div class="picker-selected-range" id="pickerSelectedText" style="margin-bottom: 8px;">날짜를 선택하세요</div>
+            <div class="picker-grid" id="pickerCalGrid"></div>
         </div>
 
         <div class="form-group">
@@ -888,13 +936,19 @@
         console.warn("Firebase 연동 준비 상태입니다.");
     }
 
-    /* --- 2. 상태 변수 및 기기별 디폴트 설정 --- */
+    /* --- 2. 상태 변수 --- */
     let currentYear = new Date().getFullYear();
     let currentMonth = new Date().getMonth();
     let currentProfile = 'dashboard';
     let currentTab = 'all'; 
     let currentViewMode = 'list';
     let editingRecordId = null; 
+
+    // 기간 선택 피커 변수
+    let pickerYear = currentYear;
+    let pickerMonth = currentMonth;
+    let selectedStartDate = null;
+    let selectedEndDate = null;
 
     let deviceDefaultUser = localStorage.getItem('device_default_user') || '남편';
 
@@ -963,7 +1017,7 @@
 
     function syncToFirebase() {
         saveLocalData();
-        render(); // 화면 즉시 업데이트
+        render();
 
         if (!isFirebaseActive) return;
 
@@ -1023,7 +1077,7 @@
         renderRecords();
     }
 
-    /* --- 5. 연산 및 렌더링 --- */
+    /* --- 5. 연산 및 렌더링 (소수점 2자리 변경 적용) --- */
     function render() {
         renderYearDropdown();
 
@@ -1049,13 +1103,14 @@
         const wPlan = records.filter(r => r.user === "아내").reduce((a, r) => a + (parseFloat(r.deduct) || 1.0), 0);
         const wUsed = records.filter(r => r.user === "아내" && r.date <= todayStr).reduce((a, r) => a + (parseFloat(r.deduct) || 1.0), 0);
 
-        document.getElementById('hTotal').innerText = `${hTotal.toFixed(1)}일`;
-        document.getElementById('hPlan').innerText = `${hPlan.toFixed(1)}일`;
-        document.getElementById('hRemaining').innerText = `${(hTotal - hPlan).toFixed(1)}일`;
+        // 전체 대시보드 소수점 둘째 자리까지 표기 (.toFixed(2))
+        document.getElementById('hTotal').innerText = `${hTotal.toFixed(2)}일`;
+        document.getElementById('hPlan').innerText = `${hPlan.toFixed(2)}일`;
+        document.getElementById('hRemaining').innerText = `${(hTotal - hPlan).toFixed(2)}일`;
 
-        document.getElementById('wTotal').innerText = `${wTotal.toFixed(1)}일`;
-        document.getElementById('wPlan').innerText = `${wPlan.toFixed(1)}일`;
-        document.getElementById('wRemaining').innerText = `${(wTotal - wPlan).toFixed(1)}일`;
+        document.getElementById('wTotal').innerText = `${wTotal.toFixed(2)}일`;
+        document.getElementById('wPlan').innerText = `${wPlan.toFixed(2)}일`;
+        document.getElementById('wRemaining').innerText = `${(wTotal - wPlan).toFixed(2)}일`;
 
         const hDates = records.filter(r => r.user === "남편").map(r => r.date);
         const wDates = records.filter(r => r.user === "아내").map(r => r.date);
@@ -1256,7 +1311,96 @@
         }
     }
 
-    /* --- 6. 모달 및 프로필 제어 --- */
+    /* --- 6. 모달 피커 달력 로직 --- */
+    function renderPickerCalendar() {
+        const monthNames = ["1월", "2월", "3월", "4월", "5월", "6월", "7월", "8월", "9월", "10월", "11월", "12월"];
+        document.getElementById('pickerCalTitle').innerText = `${pickerYear}년 ${monthNames[pickerMonth]}`;
+
+        const grid = document.getElementById('pickerCalGrid');
+        grid.innerHTML = "";
+
+        ["일", "월", "화", "수", "목", "금", "토"].forEach(lbl => {
+            const el = document.createElement('div');
+            el.className = 'picker-day-label';
+            el.innerText = lbl;
+            grid.appendChild(el);
+        });
+
+        const firstDay = new Date(pickerYear, pickerMonth, 1).getDay();
+        const daysInMonth = new Date(pickerYear, pickerMonth + 1, 0).getDate();
+
+        for (let i = 0; i < firstDay; i++) {
+            const empty = document.createElement('div');
+            empty.className = 'picker-cell empty';
+            grid.appendChild(empty);
+        }
+
+        for (let day = 1; day <= daysInMonth; day++) {
+            const mStr = String(pickerMonth + 1).padStart(2, '0');
+            const dStr = String(day).padStart(2, '0');
+            const dateStr = `${pickerYear}-${mStr}-${dStr}`;
+
+            const cell = document.createElement('div');
+            cell.className = 'picker-cell';
+            cell.innerText = day;
+
+            if (selectedStartDate && selectedEndDate) {
+                if (selectedStartDate === selectedEndDate && dateStr === selectedStartDate) {
+                    cell.classList.add('single-date');
+                } else if (dateStr === selectedStartDate) {
+                    cell.classList.add('start-date');
+                } else if (dateStr === selectedEndDate) {
+                    cell.classList.add('end-date');
+                } else if (dateStr > selectedStartDate && dateStr < selectedEndDate) {
+                    cell.classList.add('in-range');
+                }
+            }
+
+            cell.onclick = () => handlePickerDateClick(dateStr);
+            grid.appendChild(cell);
+        }
+
+        updatePickerText();
+    }
+
+    function handlePickerDateClick(dateStr) {
+        if (!selectedStartDate || (selectedStartDate && selectedEndDate && selectedStartDate !== selectedEndDate)) {
+            selectedStartDate = dateStr;
+            selectedEndDate = dateStr;
+        } else if (selectedStartDate && selectedEndDate === selectedStartDate) {
+            if (dateStr < selectedStartDate) {
+                selectedStartDate = dateStr;
+            } else {
+                selectedEndDate = dateStr;
+            }
+        }
+        renderPickerCalendar();
+    }
+
+    function updatePickerText() {
+        const txt = document.getElementById('pickerSelectedText');
+        if (!selectedStartDate) {
+            txt.innerText = "날짜를 터치하여 선택해 주세요";
+        } else if (selectedStartDate === selectedEndDate) {
+            txt.innerText = `선택한 날짜: ${selectedStartDate}`;
+        } else {
+            txt.innerText = `선택한 기간: ${selectedStartDate} ~ ${selectedEndDate}`;
+        }
+    }
+
+    function prevPickerMonth() {
+        if (pickerMonth > 0) pickerMonth--;
+        else { pickerMonth = 11; pickerYear--; }
+        renderPickerCalendar();
+    }
+
+    function nextPickerMonth() {
+        if (pickerMonth < 11) pickerMonth++;
+        else { pickerMonth = 0; pickerYear++; }
+        renderPickerCalendar();
+    }
+
+    /* --- 7. 모달 오픈/닫기/저장 로직 --- */
     function goToToday() {
         const today = new Date();
         currentYear = today.getFullYear();
@@ -1277,12 +1421,15 @@
     }
 
     function openAddModalWithDate(dateStr) {
-        openAddModal();
-        document.getElementById('inputStartDate').value = dateStr;
-        document.getElementById('inputEndDate').value = dateStr;
+        selectedStartDate = dateStr;
+        selectedEndDate = dateStr;
+        const pts = dateStr.split('-');
+        pickerYear = parseInt(pts[0], 10);
+        pickerMonth = parseInt(pts[1], 10) - 1;
+        openAddModal(true);
     }
 
-    function openAddModal() {
+    function openAddModal(isPresetDate = false) {
         editingRecordId = null;
         document.getElementById('modalTitle').innerText = "휴가 추가";
         document.getElementById('modalDeleteBtn').style.display = 'none';
@@ -1294,14 +1441,19 @@
         }
         document.getElementById('inputUser').value = defaultUser;
 
-        const todayStr = new Date().toISOString().split('T')[0];
-        document.getElementById('inputStartDate').value = todayStr;
-        document.getElementById('inputEndDate').value = todayStr;
-        document.getElementById('endDateRow').style.display = 'flex';
+        if (!isPresetDate) {
+            const todayStr = new Date().toISOString().split('T')[0];
+            selectedStartDate = todayStr;
+            selectedEndDate = todayStr;
+            pickerYear = currentYear;
+            pickerMonth = currentMonth;
+        }
+
         document.getElementById('inputType').value = '개인연차';
         document.getElementById('inputDeduct').value = '1';
         document.getElementById('inputNote').value = ''; 
         handleTypeChange();
+        renderPickerCalendar();
         document.getElementById('addModal').style.display = 'flex';
     }
 
@@ -1320,8 +1472,13 @@
         if (!record) return;
 
         document.getElementById('inputUser').value = record.user || "남편";
-        document.getElementById('inputStartDate').value = record.date;
-        document.getElementById('endDateRow').style.display = 'none';
+        
+        selectedStartDate = record.date;
+        selectedEndDate = record.date;
+        const pts = record.date.split('-');
+        pickerYear = parseInt(pts[0], 10);
+        pickerMonth = parseInt(pts[1], 10) - 1;
+
         document.getElementById('inputType').value = record.type;
 
         const numVal = parseFloat(record.deduct);
@@ -1333,21 +1490,20 @@
         document.getElementById('inputNote').value = record.note || '';
 
         handleTypeChange();
+        renderPickerCalendar();
         document.getElementById('addModal').style.display = 'flex';
     }
 
     function saveRecord(keepOpen = false) {
         const user = document.getElementById('inputUser').value;
-        const startInput = document.getElementById('inputStartDate');
-        const startStr = startInput.value;
         const type = document.getElementById('inputType').value;
         let deduct = parseFloat(document.getElementById('inputDeduct').value);
         if (type === "공동연차" || type === "포상휴가") deduct = 1.0;
         const note = document.getElementById('inputNote').value;
 
-        if (!startStr) return alert("날짜를 입력해 주세요.");
+        if (!selectedStartDate || !selectedEndDate) return alert("날짜를 선택해 주세요.");
 
-        const targetYear = parseInt(startStr.split('-')[0], 10);
+        const targetYear = parseInt(selectedStartDate.split('-')[0], 10);
         if (!leaveData[targetYear]) {
             leaveData[targetYear] = { baseTotal: { "남편": 20.0, "아내": 15.0 }, records: [] };
         }
@@ -1356,18 +1512,14 @@
             const record = leaveData[currentYear].records.find(r => r.id === editingRecordId);
             if (record) {
                 record.user = user;
-                record.date = startStr;
+                record.date = selectedStartDate;
                 record.type = type;
                 record.deduct = deduct;
                 record.note = note;
             }
         } else {
-            const endStr = document.getElementById('inputEndDate').value;
-            if (!endStr) return alert("종료일을 입력해 주세요.");
-            if (startStr > endStr) return alert("종료일은 시작일보다 빠를 수 없습니다.");
-
-            let curr = new Date(startStr);
-            const last = new Date(endStr);
+            let curr = new Date(selectedStartDate);
+            const last = new Date(selectedEndDate);
 
             while (curr <= last) {
                 const dayOfWeek = curr.getDay();
@@ -1394,11 +1546,12 @@
 
         if (keepOpen) {
             document.getElementById('inputNote').value = '';
-            let nextDate = new Date(startStr);
+            let nextDate = new Date(selectedEndDate);
             nextDate.setDate(nextDate.getDate() + 1);
             const nextDateStr = nextDate.toISOString().split('T')[0];
-            startInput.value = nextDateStr;
-            document.getElementById('inputEndDate').value = nextDateStr;
+            selectedStartDate = nextDateStr;
+            selectedEndDate = nextDateStr;
+            renderPickerCalendar();
             showToast("휴가가 추가되었습니다.");
         } else {
             closeModal('addModal');
@@ -1440,15 +1593,6 @@
 
     function closeModal(modalId) {
         document.getElementById(modalId).style.display = 'none';
-    }
-
-    function onStartDateChange() {
-        const startVal = document.getElementById('inputStartDate').value;
-        const endDateInput = document.getElementById('inputEndDate');
-        if (startVal && editingRecordId === null) {
-            endDateInput.value = startVal;
-            endDateInput.min = startVal;
-        }
     }
 
     function handleTypeChange() {
