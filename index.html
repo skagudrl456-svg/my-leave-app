@@ -24,6 +24,7 @@
             --input-bg: #ffffff;
             --tab-bg: #e3e3e8;
             --tab-active-bg: #ffffff;
+            --arrow-color: %238e8e93;
             
             --safe-top: env(safe-area-inset-top, 47px);
             --safe-bottom: env(safe-area-inset-bottom, 34px);
@@ -48,6 +49,7 @@
                 --input-bg: #2c2c2e;
                 --tab-bg: #2c2c2e;
                 --tab-active-bg: #636366;
+                --arrow-color: %23ffffff;
             }
         }
 
@@ -649,6 +651,18 @@
             color: var(--text-main);
         }
 
+        /* 모바일 셀렉트 화살표 다크 모드 시선 보정 */
+        select {
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            padding-right: 20px;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='var(--arrow-color)' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right center;
+            background-size: 14px;
+        }
+
         select option {
             background-color: var(--card-bg);
             color: var(--text-main);
@@ -898,7 +912,9 @@
         currentViewMode = mode;
         document.getElementById('btnListView').classList.toggle('active', mode === 'list');
         document.getElementById('btnCalView').classList.toggle('active', mode === 'calendar');
-        renderRecords();
+        
+        // 뷰 전환 시 항상 '전체' 탭으로 돌아가도록 처리
+        selectTab('all');
     }
 
     function selectTab(tabType) {
@@ -1150,7 +1166,6 @@
         document.getElementById('endDateRow').style.display = 'none';
         document.getElementById('inputType').value = record.type;
 
-        // 수치형으로 파싱하여 option value와 완벽 매칭
         const numVal = parseFloat(record.deduct);
         let matchStr = "1";
         if (numVal === 0.5) matchStr = "0.5";
