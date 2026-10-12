@@ -552,7 +552,6 @@
         .cal-cell.empty { background: none; cursor: default; }
         .cal-cell.today { border-color: var(--primary); }
 
-        /* 원본 색상 채우기 레이어 */
         .cal-fill {
             position: absolute;
             bottom: 0;
@@ -570,7 +569,6 @@
         .bg-personal { background-color: rgba(var(--accent-green-rgb), 0.35); }
         .bg-reward { background-color: rgba(var(--accent-purple-rgb), 0.35); }
 
-        /* 남편/아내 사용자 점 뱃지 (상단 오버레이) */
         .user-dots-container {
             position: absolute;
             top: 4px;
@@ -727,7 +725,6 @@
     <div class="content">
         <div id="dashboardSection" style="display: block;">
             <div class="dashboard-grid">
-                <!-- 남편 요약 카드 (터치 시 남편 탭 이동) -->
                 <div class="dash-card" onclick="selectProfile('남편')">
                     <div class="dash-user-title">
                         남편 <span class="dash-user-badge badge-husband">Husband</span>
@@ -737,7 +734,6 @@
                     <div class="dash-row" style="margin-top: 6px;">잔여 연차 <span class="dash-val" style="color: var(--primary);" id="hRemaining">20.0일</span></div>
                 </div>
 
-                <!-- 아내 요약 카드 (터치 시 아내 탭 이동) -->
                 <div class="dash-card" onclick="selectProfile('아내')">
                     <div class="dash-user-title">
                         아내 <span class="dash-user-badge badge-wife">Wife</span>
@@ -900,7 +896,6 @@
     let currentViewMode = 'list';
     let editingRecordId = null; 
 
-    // 현재 기기의 기본 프로필 (남편/아내) 기억
     let deviceDefaultUser = localStorage.getItem('device_default_user') || '남편';
 
     const defaultData = {
@@ -967,10 +962,11 @@
     }
 
     function syncToFirebase() {
-        if (!isFirebaseActive) {
-            saveLocalData();
-            return;
-        }
+        saveLocalData();
+        render(); // 화면 즉시 업데이트
+
+        if (!isFirebaseActive) return;
+
         db.collection("leave_management").doc("shared_data").set(leaveData)
             .then(() => showToast("☁️ 서버 동기화 완료"))
             .catch(err => console.error(err));
@@ -1144,7 +1140,6 @@
                 </div>
             `;
 
-            // 스와이프 삭제 기능 복구
             let startX = 0;
             const cardEl = wrapper.querySelector('.record-card');
             cardEl.addEventListener('touchstart', e => { startX = e.touches[0].clientX; });
@@ -1240,7 +1235,6 @@
                 if (primaryRec.type === "공동연차") bgClass = "bg-joint";
                 if (primaryRec.type === "포상휴가") bgClass = "bg-reward";
 
-                // 남편/아내 사용자 구분 점 뱃지 생성
                 let userDotsHtml = '<div class="user-dots-container">';
                 if (dayRecords.some(r => r.user === "남편")) userDotsHtml += '<span class="user-dot user-dot-husband"></span>';
                 if (dayRecords.some(r => r.user === "아내")) userDotsHtml += '<span class="user-dot user-dot-wife"></span>';
@@ -1294,7 +1288,6 @@
         document.getElementById('modalDeleteBtn').style.display = 'none';
         document.getElementById('btnSaveAndContinue').style.display = 'block';
 
-        // 탭 상태 또는 기기 디폴트값을 기준으로 대상 프로필 설정
         let defaultUser = deviceDefaultUser;
         if (currentProfile === '남편' || currentProfile === '아내') {
             defaultUser = currentProfile;
@@ -1313,7 +1306,6 @@
     }
 
     function onUserSelectChange(val) {
-        // 모달에서 프로필을 바꾸면 해당 기기의 기본 사용자로 저장
         deviceDefaultUser = val;
         localStorage.setItem('device_default_user', val);
     }
